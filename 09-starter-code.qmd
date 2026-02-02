@@ -1,0 +1,232 @@
+---
+title: "09-Starter-Code"
+format: docx
+editor: visual
+---
+
+## Getting Started
+
+```{r message=FALSE}
+# Load the tidyverse and tidymodels packages
+library(tidyverse)
+library(tidymodels)
+```
+
+## Simulation Review
+
+Remember we can pretend that our model fits our story exactly and simulate data.
+
+```{r}
+# choose a seed value
+# what is this again?
+set.seed(42)
+
+# Set variable and parameter values.
+# feel free to adjust these values
+nobs <- 300
+intercept <- 30
+slope <- 9
+
+# Simulate data.
+sim_data_01 <- tibble(
+  discount = round(runif(nobs, min = 0, max = 20)),
+  sales = intercept + slope * discount + rnorm(nobs, mean = 0, sd = 5)
+)
+
+sim_data_01
+```
+
+Plot simulated data.
+
+```{r}
+sim_data_01 |> 
+  ggplot(aes(x = discount, y = sales)) +
+  geom_jitter(size = 2, alpha = 0.5) +
+  geom_smooth(method = "lm")
+```
+
+We can use the **binomial distribution** to simulate **binary** data. In a binary variable there are two **levels**, with the level equal to zero known as the **baseline level** or **reference level**.
+
+```{r}
+# Simulate some more data.
+sim_data_02 <- tibble(
+  coupon = rbinom(nobs, size = 1, prob = 0.7),
+  sales = intercept + slope * coupon + rnorm(nobs, mean = 0, sd = 5)
+)
+
+sim_data_02
+```
+
+Plot the data and linear regression model with a binary variable, `coupon`.
+
+```{r message=FALSE}
+sim_data_02 |> 
+  ggplot(aes(x = coupon, y = sales)) +
+  geom_jitter(size = 2, alpha = 0.5) +
+  geom_smooth(method = "lm")
+```
+
+## Model Fitting
+
+Remember that when we *fit* a linear model we are finding the line of best fit and getting *parameter estimates*. Model fitting is also called 'training' or 'estimating' a model.
+
+```{r}
+# Fit the first model.
+fit_01 <- linear_reg() |> 
+  set_engine("lm") |> 
+  fit(sales ~ discount, data = sim_data_01)
+
+# Fit the second model.
+fit_02 <- linear_reg() |> 
+  set_engine("lm") |> 
+  fit(sales ~ coupon, data = sim_data_02)
+```
+
+## Examine Parameter Estimates
+
+Remember that our goal is to use the model to *estimate* the unobserved parameters from the data.
+
+Since $discount$ is continuous:
+
+- The intercept parameter $\beta_0$ represents the expected value of $sales$ when $discount$ is zero.
+- The associated slope parameter $\beta_1$ represents the expected amount by which $sales$ will change given a one unit increase in $discount$.
+
+```{r}
+# Evaluate model fit.
+fit_01 |> 
+  tidy()
+```
+
+What's different about `sim_data_02`?
+
+```{r}
+# Evaluate model fit.
+fit_02 |> 
+  tidy()
+```
+
+Since $coupon$ is discrete:
+
+- The intercept parameter $\beta_0$ represents the expected value of $sales$ when $coupon$ is equal to the *baseline level* (in this case, zero or no coupon).
+- The associated slope parameter $\beta_1$ represents the expected amount by which $sales$ will change **relative** to the *baseline level* of $coupon$.
+
+## Your Turn!
+
+Examine the simulated data shown below.
+
+```{r}
+# set random seed
+set.seed(42)
+
+# number of observations
+nobs <- 500
+intercept <- 10
+slope_coupon <- 2
+slope_ad <- 3
+
+# Simulate some more data.
+sim_data_example <- tibble(
+  coupon = rbinom(nobs, size = 1, prob = 0.7),
+  ad = rbinom(nobs, size = 1, prob = 0.5),
+  sales = intercept + slope_coupon * coupon + slope_ad * ad + rnorm(nobs, mean = 0, sd = 5)
+)
+
+sim_data_example
+```
+
+Evaluate the model fit.
+
+```{r}
+# Fit the example model.
+fit_example <- linear_reg() |> 
+  set_engine("lm") |> 
+  fit(sales ~ ., data = sim_data_example)
+
+fit_example |>
+  tidy()
+```
+
+How would you interpret the values of $\beta_0$, $\beta_1$, and $\beta_2$?
+
+Write your answer here.
+
+
+
+## Intervals and Significance
+
+So far the parameter estimates have been **point estimates**, a single number that represents our best guess.
+
+But this is a statistical model -- there is always uncertainty (i.e., error). We can produce an **interval estimate** of the parameters, a range of numbers that represent our best guess.
+
+```{r}
+# Include confidence intervals.
+tidy(fit_01, conf.int = TRUE)
+```
+
+If the interval for a parameter **includes** zero, then that parameter is not statistically significant.
+
+*We reach the same conclusion using a confidence interval as when using a p-value!*
+
+```{r}
+# Include confidence intervals.
+tidy(fit_02, conf.int = TRUE)
+```
+
+## Model Comparison
+
+Eventually we'll want to compare how well different models fit the same data. To do that efficiently we need a single number that describes the **overall model fit**.
+
+```{r}
+# Look at the r.squared.
+glance(fit_01)
+```
+
+The $R^2$ is the percent of variation in $y$ that can be explained by the model (i.e., the explanatory variable(s)). Closer to 1 is better! This is easy to misuse, so it will be our measure of overall model fit only temporarily.
+
+## Another Interpretation of R-Squared
+
+Think of it this way:
+
+- R-squared is a numerical measure of whether our story (and our correspond model) fit the data
+- If R-squared is high, our story (model) is good at using the $X$ variables to explain why different values of $Y$ exist
+- If R-squared is low, our story (model) struggles to explain why there are different values of $Y$
+
+## Prediction
+
+While the parameter estimates are often the object of interest for an inferential model, we of course can **predict** the outcome using a fitted model.
+
+To predict the outcome we need new data that represents the *counterfactuals* we'd like to predict to feed into the fitted model.
+
+```{r}
+# Column names need to match the fitted model.
+scenarios <- tibble(coupon = c(0, 1))
+```
+
+We can predict using the fitted model and the new data.
+
+```{r}
+# Predict and bind on the new data.
+predict(fit_02, new_data = scenarios) |> 
+  bind_cols(scenarios)
+```
+
+Remember that we have more than point estimates. We can compute confidence intervals for predictions as well (predictive intervals).
+
+```{r}
+# Predict and bind on prediction intervals.
+bind_cols(
+  predict(fit_02, new_data = scenarios),
+  predict(fit_02, new_data = scenarios, type = "pred_int"),
+  scenarios
+)
+```
+
+## Recover Parameters
+
+One of the purposes of simulating data from a model is to evaluate whether a model can recover the **true** parameter values. This can be used to evaluate what happens when our model/story **does not** accurately describe how our data came to be. You'll see an example of this in the Exercise for this week.
+
+For now, look at the coefficients from our first model. Did it recover the true values?
+
+```{r}
+tidy(fit_01, conf.int = TRUE)
+```

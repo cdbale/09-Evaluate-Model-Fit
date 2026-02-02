@@ -1,0 +1,329 @@
+---
+title: "Evaluate Model Fit"
+subtitle: "MCB Consulting Group (MKTG 411)"
+output: 
+  ioslides_presentation:
+    widescreen: true
+    css: style.css
+---
+
+## Project Feedback
+
+How did things go?
+
+---
+
+<center>
+
+![](Figures/bad_plot.png){width="900px"}
+
+</center>
+
+---
+
+<center>
+
+![](Figures/good_plot.png){width="1000px"}
+
+</center>
+
+## Marketing Analytics Process
+
+<center>
+![](Figures/process_model.png){width="900px"}
+</center>
+
+## Inferential Modeling Workflow
+
+<center>
+![](Figures/workflow-inference_simulate-fit-evaluate-predict.png){width=900px}
+</center>
+
+---
+
+![](Figures/hex_broom.png){width=500px}
+
+## Motivating Example
+
+Our client, Kroger, is interested in a model that explains the factors influencing sales of their most popular soup products. Let's define a couple of different models that might fit the story of how soup sales are determined. How would we determine which model is the most appropriate?
+
+## Getting Started
+
+```{r message=FALSE}
+# Load packages.
+library(tidyverse)
+library(tidymodels)
+```
+
+## Simulation Review
+
+Remember we can pretend that our model fits our story exactly and simulate data.
+
+```{r}
+# What's this again?!
+set.seed(42)
+
+# Set variable and parameter values.
+nobs <- 300
+intercept <- 30
+slope <- 9
+
+# Simulate data.
+sim_data_01 <- tibble(
+  discount = round(runif(nobs, min = 0, max = 20)),
+  sales = intercept + slope * discount + rnorm(nobs, mean = 0, sd = 5)
+)
+
+sim_data_01
+```
+
+---
+
+```{r message=FALSE}
+sim_data_01 |> 
+  ggplot(aes(x = discount, y = sales)) +
+  geom_jitter(size = 2, alpha = 0.5) +
+  geom_smooth(method = "lm")
+```
+
+---
+
+We can use the **binomial distribution** to simulate **binary** data. In a binary variable there are two **levels**, with the level equal to zero known as the **baseline level** or **reference level**.
+
+```{r}
+# Simulate some more data.
+sim_data_02 <- tibble(
+  coupon = rbinom(nobs, size = 1, prob = 0.7),
+  sales = intercept + slope * coupon + rnorm(nobs, mean = 0, sd = 5)
+)
+
+sim_data_02
+```
+
+---
+
+```{r message=FALSE}
+sim_data_02 |> 
+  ggplot(aes(x = coupon, y = sales)) +
+  geom_jitter(size = 2, alpha = 0.5) +
+  geom_smooth(method = "lm")
+```
+
+## Fit the Model
+
+Remember that when we *fit* a linear model we are finding the line of best fit and getting *parameter estimates*.
+
+```{r}
+# Fit the first model.
+fit_01 <- linear_reg() |> 
+  set_engine("lm") |> 
+  fit(sales ~ discount, data = sim_data_01)
+
+# Fit the second model.
+fit_02 <- linear_reg() |> 
+  set_engine("lm") |> 
+  fit(sales ~ coupon, data = sim_data_02)
+```
+
+## Parameter Estimates
+
+Remember that our goal is to use the model to *estimate* the unobserved parameters from the data.
+
+```{r}
+# Evaluate model fit.
+fit_01 |> 
+  tidy()
+```
+
+---
+
+<center>
+![](Figures/monsters_tidy.png){width=900px}
+</center>
+
+## How Do We Interpret Our Models?
+
+$$sales = 29.80 + 9.01 \times discount$$
+
+If $x$ is continuous:
+
+- The intercept parameter $\beta_0$ represents the expected value of $y$ when $x$ is zero.
+- The associated slope parameter $\beta_1$ represents the expected amount by which $y$ will change given a one unit increase in $x$.
+
+---
+
+What's different about `sim_data_02`?
+
+```{r}
+# Evaluate model fit.
+fit_02 |> 
+  tidy()
+```
+
+---
+
+$$sales = 29.60 + 9.07 \times coupon$$
+
+If $x$ is discrete:
+
+- The intercept parameter $\beta_0$ represents the expected value of $y$ when $x$ is equal to the *baseline level*.
+- The associated slope parameter $\beta_1$ represents the expected amount by which $y$ will change **relative** to the *baseline level* of $x$.
+
+## Your Turn!
+
+See example in the starter code.
+
+## Intervals and Significance
+
+So far the parameter estimates have been **point estimates**, a single number that represents our best guess.
+
+But this is a statistical model -- there is always uncertainty (i.e., error). We can produce an **interval estimate** of the parameters, a range of numbers that represent our best guess.
+
+```{r}
+# Include confidence intervals.
+tidy(fit_01, conf.int = TRUE)
+```
+
+---
+
+These interval estimates are called **confidence intervals**. Given our model and the data, they are our best guess of the unobserved parameters.
+
+If the confidence interval *doesn't include zero*, we can say that the parameter estimate is **statistically significant** (a.k.a., significant or significantly different from zero).
+
+*We reach the same conclusion using a confidence interval as when using a p-value!*
+
+```{r}
+# Include confidence intervals.
+tidy(fit_02, conf.int = TRUE)
+```
+
+## Model Comparison
+
+Eventually we'll want to compare how well different models fit the same data. To do that efficiently we need a single number that describes the **overall model fit**.
+
+```{r}
+# Look at the r.squared.
+glance(fit_01)
+```
+
+The $R^2$ is the percent of variation in $y$ that can be explained by the model (i.e., the explanatory variable(s)). Closer to 1 is better! This is easy to misuse, so it will be our measure of overall model fit only temporarily.
+
+## Another Interpretation of R-Squared
+
+Think of it this way:
+
+- R-squared is a numerical measure of whether our story (and our correspond model) fit the data
+- If R-squared is high, our story (model) is good at using the $X$ variables to explain why different values of $Y$ exist
+- If R-squared is low, our story (model) struggles to explain why there are different values of $Y$
+
+## Prediction
+
+While the parameter estimates are often the object of interest for an inferential model, we of course can **predict** the outcome using the fitted model:
+
+$$sales = 29.60 + 9.07 \times coupon$$
+
+To predict the outcome we need new data that represents the *counterfactuals* we'd like to predict to feed into the fitted model.
+
+```{r}
+# Column names need to match the fitted model.
+scenarios <- tibble(coupon = c(0, 1))
+```
+
+---
+
+We can predict using the fitted model and the new data.
+
+```{r}
+# Predict and bind on the new data.
+predict(fit_02, new_data = scenarios) |> 
+  bind_cols(scenarios)
+```
+
+---
+
+Remember that we have more than point estimates. We can compute confidence intervals for predictions as well (predictive intervals).
+
+```{r}
+# Predict and bind on prediction intervals.
+bind_cols(
+  predict(fit_02, new_data = scenarios),
+  predict(fit_02, new_data = scenarios, type = "pred_int"),
+  scenarios
+)
+```
+
+## Recover Parameters
+
+One of the purposes of simulating data from a model is to evaluate whether a model can recover the **true** parameter values. This can be used to evaluate what happens when our model/story **does not** accurately describe how our data came to be. You'll see an example of this in the Exercise for this week.
+
+For now, look at the coefficients from our first model. Did it recover the true values?
+
+```{r}
+tidy(fit_01, conf.int = TRUE)
+```
+
+## Live Coding
+
+Imagine our client, Kroger, is interested in evaluating the effectiveness of a recent promotional campaign. Kroger had their in-house analytics team create a linear regression model for `sales` as a function of `discount` and `coupon`. They ultimately concluded that coupons were ineffective at driving sales. However, partway through analyzing the data, Kroger realized that their coupon system had malfunctioned, and customers they thought had received digital coupons did not. Only mailers were sent out to their older demographic customers.
+
+Kroger is seeking your help to determine what the effects of this system glitch could have been on the results of their model.
+
+```{r}
+slope_discount <- 3
+slope_received_coupon <- 2
+
+# Simulate data.
+sim_data_campaign <- tibble(
+  discount = round(runif(nobs, min = 0, max = 20)),
+  coupon = rbinom(nobs, size = 1, prob = 0.5),
+  mail = rbinom(nobs, size = 1, prob = 0.25),
+  received_coupon = coupon * mail,
+  sales = intercept + slope_discount * discount + slope_received_coupon * received_coupon + rnorm(nobs, mean = 0, sd = 5)
+)
+
+sim_data_campaign
+```
+
+
+```{r}
+campaign_model <- linear_reg() |> 
+  set_engine("lm") |> 
+  fit(sales ~ discount + coupon, data = sim_data_campaign)
+```
+
+
+```{r}
+campaign_model |>
+  tidy()
+```
+
+## Wrapping Up
+
+*Summary*
+
+- Discussed interpreting parameter estimates and statistical significance.
+- Considered model comparison.
+- Walked through prediction.
+- Demonstrated parameter recovery.
+
+*Next Time*
+
+- Adding explanatory variables.
+
+*Supplementary Material*
+
+- *Tidy Modeling with R* Chapter 6.2-6.3
+
+*Artwork by @allison_horst*
+
+## Exercise 8
+
+Suppose, hypothetically, that soup `sales` are determined entirely by `discount`, the amount (in dollars and cents) that the price of a product is discounted, and `coupon`, whether a consumer was sent a digital coupon for a buy-one, get-one free deal. Kroger is interested in evaluating whether the discount or the coupon had a larger effect on sales.
+
+Kroger's couponing system had a glitch that caused the coupons not the be sent to consumers. However, this glitch was discovered **after** Kroger's analysts examined the data using a linear regression model for `sales` as a function of `discount` and `coupon`. Your task is to simulate data that matches this scenario and determine what the impact of the couponing error is on the model that Kroger trained.
+
+1. Simulate a single data set with three variables: `discount` using a uniform distribution, `coupon` as a binary variable using the binomial distribution, and `sales` as a function of *only* `discount`, using a linear model. Remember - we expect `coupon` to have an effect on `sales`, but due to the system glitch, we are simulating data where `coupon` **does not** affect sales since consumers never received their coupons! 
+2. Fit two models using {tidymodels}: `sales ~ discount` and `sales ~ discount + coupon`.
+3. Compare parameter estimates and overall model fit for both models. Which model is able to recover the true parameter values?
+4. Using the best-fitting model, predict some possible counterfactuals - for example, what would happen to sales if Kroger were to use different discount amounts?
+5. Render the Quarto document into Word and upload to Canvas.

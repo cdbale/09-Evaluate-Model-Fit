@@ -87,6 +87,7 @@ Look at point estimates from all simulated data sets.
   beta1 = beta1_estimates,
 ))
 ```
+
 Tidy the parameter estimates.
 
 ```{r}
@@ -209,12 +210,12 @@ conf_int_estimates_sorted |>
   summarize(percent_contains = mean(contains_param == "Yes"))
 ```
 
-While confidence intervals are not guaranteed to contain the population parameter, they give a more conservative estimate of coefficient values. 
+While confidence intervals are not guaranteed to contain the population parameter, they give a more conservative estimate of coefficient values.
 
 So what are the advantages of confidence intervals?
 
-- They give an estimate of the coefficient magnitude AND statistical significance all in one.
-- They quantify uncertainty - the wider the interval, the less certain we are about our estimate and the less likely we will have statistical significance.
+-   They give an estimate of the coefficient magnitude AND statistical significance all in one.
+-   They quantify uncertainty - the wider the interval, the less certain we are about our estimate and the less likely we will have statistical significance.
 
 How do I interpret a single confidence interval?
 

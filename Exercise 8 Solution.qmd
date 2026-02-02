@@ -1,0 +1,123 @@
+---
+title: "Exercise 11"
+author: "Marc Dotson"
+format: docx
+---
+
+Suppose, hypothetically, that soup `sales` are determined entirely by `discount`, the amount (in cents) that the price of a product is discounted, and `coupon`, whether consumers were sent a digital coupon for a buy-one, get-one free deal. Kroger is interested in evaluating whether the discount or the coupon had a larger effect on sales.
+
+Kroger's couponing system had a glitch that caused the coupons not the be sent to consumers. However, this glitch was discovered **after** Kroger's analysts examined the data using a linear regression model for `sales` as a function of `discount` and `coupon`. Your task is to simulate data that matches this scenario and determine what the impact of the couponing error is on the model that Kroger trained.
+
+1. Simulate a single data set with three variables: `discount` using a uniform distribution, `coupon` as a binary variable using the binomial distribution, and `sales` as a function of *only* `discount`, using a linear model. Remember - we expect `coupon` to have an effect on `sales`, but due to the system glitch, we are simulating data where `coupon` **does not** affect sales since consumers never received their coupons! 
+2. Fit two models using {tidymodels}: `sales ~ discount` and `sales ~ discount + coupon`.
+3. Compare parameter estimates and overall model fit for both models. Which model is able to recover the true parameter values?
+4. Using the best-fitting model, predict some possible counterfactuals - for example, what would happen to sales if Kroger were to use different discount amounts?
+5. Render the Quarto document into Word and upload to Canvas.
+
+**Five points total, one point each for:**
+
+- **Simulate sales data as a function of discount but not coupon.**
+- **Fitting both models.**
+- **Discussing the differences in model fit and demonstrating parameter recovery.**
+- **Identifying the best-fitting model and using it to predict possible counterfactuals.**
+- **One point for submitting a rendered Word document.**
+
+## Simulate Data
+
+Let's load the tidyverse and tidymodels, set the simulation seed, specify the parameter and variable values, and simulate sales data using a regression, as specified.
+
+```{r}
+# Load packages.
+library(tidyverse)
+library(tidymodels)
+
+# Set the simulation seed.
+set.seed(42)
+
+# Set variable and parameter values.
+nobs <- 500
+intercept <- 50
+slope <- 3
+
+# Simulate data.
+sim_data <- tibble(
+  discount = round(runif(nobs, min = 0, max = 20)),
+  coupon = rbinom(nobs, size = 1, prob = 0.7),
+  sales = intercept + slope * discount + rnorm(nobs, mean = 0, sd = 3)
+)
+
+sim_data
+```
+
+Our simulated data consists of two explanatory variables `discount` and `coupon` drawn from a random uniform distribution (values between 0 and 20) and a random binomial distribution (probability of "success" equal to 0.7), respectively, and a response variable `sales` equal to `intercept` plus `slope` times `discount` plus an error term, which is drawn from a random normal distribution (mean 0 and standard deviation 3). Note that `coupon` doesn't effect `sales` in this simulated data.
+
+## Fit the Models
+
+All that differs between fitting the two models is the formula in `fit()`.
+
+```{r}
+# Fit the correct model.
+fit_01 <- linear_reg() |> 
+  set_engine("lm") |> 
+  fit(sales ~ discount, data = sim_data)
+
+# Fit the model with a superfluous explanatory variable.
+fit_02 <- linear_reg() |> 
+  set_engine("lm") |> 
+  fit(sales ~ discount + coupon, data = sim_data)
+```
+
+## Evaluate Model Fit
+
+Let's first look at the parameter estimates from both models.
+
+```{r}
+# Tidy model output, including confidence intervals.
+tidy(fit_01, conf.int = TRUE)
+tidy(fit_02, conf.int = TRUE)
+```
+
+Both models are able to recover parameters. The incorrect model that includes the superfluous `coupon` explanatory variable also correctly identifies the variable as not statistically significant (i.e., the confidence interval *includes* zero). In other words, the model identifies that the parameter estimate for `coupon` isn't any different from zero -- meaning the variable has no apparent effect on the outcome.
+
+As a bonus, see that the p-value is huge, much larger than the 0.05 cutoff, which says it's not statistically significant.
+
+Ultimately, it is likely that Kroger's model identified no statistically significant effect of coupons on sales, which may be why the issue was identified in the first place.
+
+Now let's look at overall model fit.
+
+```{r}
+# Look at r-squared.
+glance(fit_01)
+glance(fit_02)
+```
+
+In this case the `r-squared` is the same for both models. There isn't a clear "best fitting" model. Also, it is very close to 1, which shouldn't be surprising for simulated data.
+
+## Prediction
+
+Since both models fit equally well, I'm going to use the model with both explanatory variables to predict some possible outcomes. Here we'll want to consider possible amounts spent on discounts plus whether or not a coupon is being used at the same time.
+
+```{r}
+# Column names need to match the fitted model.
+new_data <- tibble(
+  discount = rep(c(10, 20, 30, 40), 2),
+  coupon = c(rep(0, 4), rep(1, 4))
+)
+
+new_data
+```
+
+Note that we have all possible combinations of the four `discount` values I picked and both levels of `coupon`.
+
+```{r}
+# Predict and bind on prediction intervals.
+predict(fit_02, new_data = new_data) |> 
+  bind_cols(
+    predict(fit_02, new_data = new_data, type = "pred_int"),
+    new_data) |> 
+  arrange(desc(.pred))
+```
+
+When we `arrange()` by the prediction for `sales` we can clearly see that spending more on `discount` produces more sales. Whether or not we include a `coupon` doesn't really matter, as we would expect from the parameter estimates.
+
+We can read this, assuming thousands of dollars, that spending \$40,000 in discounts, with or without a coupon, is expected to produce about \$170,000 in sales. Taking the model uncertainty (i.e., the confidence interval) into account, the predicted sales could be anywhere from about \$164,700 to about \$177,200.
