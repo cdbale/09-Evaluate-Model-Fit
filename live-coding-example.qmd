@@ -1,0 +1,34 @@
+---
+title: "Live Coding Example"
+format: docx
+editor: visual
+---
+
+```{r}
+set.seed(42)
+
+slope_discount <- 3
+slope_received_coupon <- 2
+
+# Simulate data.
+sim_data_campaign <- tibble(
+  discount = round(runif(nobs, min = 0, max = 20)),
+  coupon = rbinom(nobs, size = 1, prob = 0.5),
+  mail = rbinom(nobs, size = 1, prob = 0.25),
+  received_coupon = coupon * mail,
+  sales = intercept + slope_discount * discount + slope_received_coupon * received_coupon + rnorm(nobs, mean = 0, sd = 5)
+)
+
+sim_data_campaign
+```
+
+```{r}
+campaign_model <- linear_reg() |> 
+  set_engine("lm") |> 
+  fit(sales ~ discount + coupon, data = sim_data_campaign)
+```
+
+```{r}
+campaign_model |>
+  tidy()
+```

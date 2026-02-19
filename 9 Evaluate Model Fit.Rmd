@@ -7,26 +7,6 @@ output:
     css: style.css
 ---
 
-## Project Feedback
-
-How did things go?
-
----
-
-<center>
-
-![](Figures/bad_plot.png){width="900px"}
-
-</center>
-
----
-
-<center>
-
-![](Figures/good_plot.png){width="1000px"}
-
-</center>
-
 ## Marketing Analytics Process
 
 <center>
@@ -267,35 +247,6 @@ tidy(fit_01, conf.int = TRUE)
 Imagine our client, Kroger, is interested in evaluating the effectiveness of a recent promotional campaign. Kroger had their in-house analytics team create a linear regression model for `sales` as a function of `discount` and `coupon`. They ultimately concluded that coupons were ineffective at driving sales. However, partway through analyzing the data, Kroger realized that their coupon system had malfunctioned, and customers they thought had received digital coupons did not. Only mailers were sent out to their older demographic customers.
 
 Kroger is seeking your help to determine what the effects of this system glitch could have been on the results of their model.
-
-```{r}
-slope_discount <- 3
-slope_received_coupon <- 2
-
-# Simulate data.
-sim_data_campaign <- tibble(
-  discount = round(runif(nobs, min = 0, max = 20)),
-  coupon = rbinom(nobs, size = 1, prob = 0.5),
-  mail = rbinom(nobs, size = 1, prob = 0.25),
-  received_coupon = coupon * mail,
-  sales = intercept + slope_discount * discount + slope_received_coupon * received_coupon + rnorm(nobs, mean = 0, sd = 5)
-)
-
-sim_data_campaign
-```
-
-
-```{r}
-campaign_model <- linear_reg() |> 
-  set_engine("lm") |> 
-  fit(sales ~ discount + coupon, data = sim_data_campaign)
-```
-
-
-```{r}
-campaign_model |>
-  tidy()
-```
 
 ## Wrapping Up
 

@@ -88,8 +88,8 @@ Remember that our goal is to use the model to *estimate* the unobserved paramete
 
 Since $discount$ is continuous:
 
-- The intercept parameter $\beta_0$ represents the expected value of $sales$ when $discount$ is zero.
-- The associated slope parameter $\beta_1$ represents the expected amount by which $sales$ will change given a one unit increase in $discount$.
+-   The intercept parameter $\beta_0$ represents the expected value of $sales$ when $discount$ is zero.
+-   The associated slope parameter $\beta_1$ represents the expected amount by which $sales$ will change given a one unit increase in $discount$.
 
 ```{r}
 # Evaluate model fit.
@@ -107,8 +107,8 @@ fit_02 |>
 
 Since $coupon$ is discrete:
 
-- The intercept parameter $\beta_0$ represents the expected value of $sales$ when $coupon$ is equal to the *baseline level* (in this case, zero or no coupon).
-- The associated slope parameter $\beta_1$ represents the expected amount by which $sales$ will change **relative** to the *baseline level* of $coupon$.
+-   The intercept parameter $\beta_0$ represents the expected value of $sales$ when $coupon$ is equal to the *baseline level* (in this case, zero or no coupon).
+-   The associated slope parameter $\beta_1$ represents the expected amount by which $sales$ will change **relative** to the *baseline level* of $coupon$.
 
 ## Your Turn!
 
@@ -134,7 +134,7 @@ sim_data_example <- tibble(
 sim_data_example
 ```
 
-Evaluate the model fit.
+Examine the model parameters.
 
 ```{r}
 # Fit the example model.
@@ -149,8 +149,6 @@ fit_example |>
 How would you interpret the values of $\beta_0$, $\beta_1$, and $\beta_2$?
 
 Write your answer here.
-
-
 
 ## Intervals and Significance
 
@@ -187,9 +185,9 @@ The $R^2$ is the percent of variation in $y$ that can be explained by the model 
 
 Think of it this way:
 
-- R-squared is a numerical measure of whether our story (and our correspond model) fit the data
-- If R-squared is high, our story (model) is good at using the $X$ variables to explain why different values of $Y$ exist
-- If R-squared is low, our story (model) struggles to explain why there are different values of $Y$
+-   R-squared is a numerical measure of whether our story (and our correspond model) fit the data
+-   If R-squared is high, our story (model) is good at using the $X$ variables to explain why different values of $Y$ exist
+-   If R-squared is low, our story (model) struggles to explain why there are different values of $Y$
 
 ## Prediction
 
@@ -230,3 +228,9 @@ For now, look at the coefficients from our first model. Did it recover the true 
 ```{r}
 tidy(fit_01, conf.int = TRUE)
 ```
+
+## Live Coding
+
+Imagine our client, Kroger, is interested in evaluating the effectiveness of a recent promotional campaign. Kroger had their in-house analytics team create a linear regression model for `sales` as a function of `discount` and `coupon`. They ultimately concluded that coupons were ineffective at driving sales. However, partway through analyzing the data, Kroger realized that their coupon system had malfunctioned, and customers they thought had received digital coupons did not. Only mailers were sent out to their older demographic customers.
+
+Kroger is seeking your help to determine what the effects of this system glitch could have been on the results of their model.
