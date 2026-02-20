@@ -273,6 +273,8 @@ Suppose, hypothetically, that soup `sales` are determined entirely by `discount`
 
 Kroger's couponing system had a glitch that caused the coupons not the be sent to consumers. However, this glitch was discovered **after** Kroger's analysts examined the data using a linear regression model for `sales` as a function of `discount` and `coupon`. Your task is to simulate data that matches this scenario and determine what the impact of the couponing error is on the model that Kroger trained.
 
+---
+
 1. Simulate a single data set with three variables: `discount` using a uniform distribution, `coupon` as a binary variable using the binomial distribution, and `sales` as a function of *only* `discount`, using a linear model. Remember - we expect `coupon` to have an effect on `sales`, but due to the system glitch, we are simulating data where `coupon` **does not** affect sales since consumers never received their coupons! 
 2. Fit two models using {tidymodels}: `sales ~ discount` and `sales ~ discount + coupon`.
 3. Compare parameter estimates and overall model fit for both models. Which model is able to recover the true parameter values?
