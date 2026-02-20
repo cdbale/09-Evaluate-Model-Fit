@@ -277,6 +277,6 @@ Kroger's couponing system had a glitch that caused the coupons not the be sent t
 
 1. Simulate a single data set with three variables: `discount` using a uniform distribution, `coupon` as a binary variable using the binomial distribution, and `sales` as a function of *only* `discount`, using a linear model. Remember - we expect `coupon` to have an effect on `sales`, but due to the system glitch, we are simulating data where `coupon` **does not** affect sales since consumers never received their coupons! 
 2. Fit two models using {tidymodels}: `sales ~ discount` and `sales ~ discount + coupon`.
-3. Compare parameter estimates and overall model fit for both models. Which model is able to recover the true parameter values?
+3. Compare parameter estimates and overall model fit for both models. Which model(s) is/are able to recover the true parameter values?
 4. Using the best-fitting model, predict some possible counterfactuals - for example, what would happen to sales if Kroger were to use different discount amounts?
 5. Render the Quarto document into Word and upload to Canvas.
