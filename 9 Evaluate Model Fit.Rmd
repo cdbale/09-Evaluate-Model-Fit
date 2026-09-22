@@ -7,6 +7,15 @@ output:
     css: style.css
 ---
 
+## Key Concepts | Evidence for a Decision
+
+- **Parameter estimates:** information extracted from data about the proposed story.
+- **Uncertainty and significance:** assess how precisely we have estimated the relationship.
+- **Model fit:** evaluate a simplification without assuming it is the true story.
+- **Counterfactuals:** use fitted parameters to explore "what if" scenarios for a managerial decision.
+
+Today we develop the **evaluate** and **predict** stages introduced in lecture 07.
+
 ## Marketing Analytics Process
 
 <center>
@@ -26,6 +35,16 @@ output:
 ## Motivating Example
 
 Our client, Kroger, is interested in a model that explains the factors influencing sales of their most popular soup products. Let's define a couple of different models that might fit the story of how soup sales are determined. How would we determine which model is the most appropriate?
+
+## Evaluate | What Would Convince Kroger?
+
+Kroger's broader decision is how to allocate promotional spending. Fitting a model gives us estimates, but the decision requires interpreting the evidence.
+
+- **Magnitude and direction:** how much do predicted sales differ as spending changes?
+- **Uncertainty:** which parameter values are consistent with the data and model assumptions?
+- **Fit:** how much variation does the model explain, and will it predict new observations well?
+
+Statistical significance alone does not establish a useful business effect or a causal relationship. We examine causality in lecture 10 and predictive validation in lecture 11.
 
 ## Getting Started
 
@@ -166,9 +185,9 @@ tidy(fit_01, conf.int = TRUE)
 
 ---
 
-These interval estimates are called **confidence intervals**. Given our model and the data, they are our best guess of the unobserved parameters.
+These interval estimates are called **confidence intervals**. Under the model assumptions, a procedure that produces 95% confidence intervals would include the true parameter in about 95% of repeated samples.
 
-If the confidence interval *doesn't include zero*, we can say that the parameter estimate is **statistically significant** (a.k.a., significant or significantly different from zero).
+If a 95% confidence interval *doesn't include zero*, the estimate is **statistically significant** at the corresponding two-sided 5% level.
 
 *We reach the same conclusion using a confidence interval as when using a p-value!*
 
@@ -192,9 +211,25 @@ The $R^2$ is the percent of variation in $y$ that can be explained by the model 
 
 Think of it this way:
 
-- R-squared is a numerical measure of whether our story (and our correspond model) fit the data
-- If R-squared is high, our story (model) is good at using the $X$ variables to explain why different values of $Y$ exist
-- If R-squared is low, our story (model) struggles to explain why there are different values of $Y$
+- R-squared measures how much observed variation our fitted model accounts for in these data.
+- A high R-squared means the model accounts for a large share of that variation; it does not prove that our story is causal or correct.
+- A low R-squared means much variation remains unexplained. A model may still provide useful information about a relationship.
+
+"All models are wrong, but some are useful": judge usefulness against the managerial question, uncertainty, and evidence beyond training fit.
+
+## Predict | Kroger's "What If" Question
+
+Lecture 07 used the illustrative relationship $\widehat{\text{sales}} = 10 + 3 \times \text{promotion_spend}$.
+
+| Hypothetical spending | Predicted sales |
+|---:|---:|
+| 0 | 10 |
+| 5 | 25 |
+| 10 | 40 |
+
+These are model-based scenarios in the example's units, not observed outcomes. With a fitted model, we substitute **estimated** parameters and feasible budget choices.
+
+Predicting what an intervention would cause requires a defensible causal story. A fitted association alone does not provide that guarantee.
 
 ## Prediction
 
@@ -202,7 +237,7 @@ While the parameter estimates are often the object of interest for an inferentia
 
 $$sales = 29.60 + 9.07 \times coupon$$
 
-To predict the outcome we need new data that represents the *counterfactuals* we'd like to predict to feed into the fitted model.
+To explore *counterfactual* scenarios, we supply new data describing the alternatives. Here we compare no coupon with a coupon; for Kroger's budget decision, the rows could instead describe different spending allocations.
 
 ```{r}
 # Column names need to match the fitted model.
@@ -221,7 +256,7 @@ predict(fit_02, new_data = scenarios) |>
 
 ---
 
-Remember that we have more than point estimates. We can compute confidence intervals for predictions as well (predictive intervals).
+We can also compute **prediction intervals** for individual new outcomes. These include both uncertainty in the fitted mean and observation-level error $\epsilon$, so they are wider than confidence intervals for the mean response.
 
 ```{r}
 # Predict and bind on prediction intervals.
@@ -242,6 +277,19 @@ For now, look at the coefficients from our first model. Did it recover the true 
 tidy(fit_01, conf.int = TRUE)
 ```
 
+## Science and Faith | Revising Our Understanding
+
+Lecture 07 connected learning about an unobserved process to both science and faith:
+
+> "If any man have ears to hear, let him hear." (Mark 4:23)
+
+1. Begin with a story or question about a process.
+2. Express the story as a model and fit it to evidence.
+3. Evaluate the evidence, recognizing that conclusions depend on assumptions.
+4. Refine our understanding, learning line upon line.
+
+How does Moroni 10:3-5 describe learning from evidence and reflection? In our analysis, what evidence would lead us to revise the soup-sales story?
+
 ## Live Coding
 
 Imagine our client, Kroger, is interested in evaluating the effectiveness of a recent promotional campaign. Kroger had their in-house analytics team create a linear regression model for `sales` as a function of `discount` and `coupon`. They ultimately concluded that coupons were ineffective at driving sales. However, partway through analyzing the data, Kroger realized that their coupon system had malfunctioned, and customers they thought had received digital coupons did not. Only mailers were sent out to their older demographic customers.
@@ -256,6 +304,7 @@ Kroger is seeking your help to determine what the effects of this system glitch 
 - Considered model comparison.
 - Walked through prediction.
 - Demonstrated parameter recovery.
+- Connected estimates, uncertainty, and "what if" scenarios to a managerial decision.
 
 *Next Time*
 
@@ -264,6 +313,7 @@ Kroger is seeking your help to determine what the effects of this system glitch 
 *Supplementary Material*
 
 - *Tidy Modeling with R* Chapter 6.2-6.3
+- [Faith and Science: Symbiotic Pathways to Truth](https://speeches.byu.edu/talks/jamie-jensen/faith-science-symbiotic-pathways-truth/) (the reflection introduced in lecture 07).
 
 *Artwork by @allison_horst*
 
